@@ -11,7 +11,13 @@
 #     e. display new board
 # 4.  request choice from second player (e.g. computer)
 #     a. get list of unchosen squares
-#     b. pick random
+#         1. check if computer or player has chance to win
+#             - get win conditions
+#             - check if there are at least 2 marked as either player && 1 open space
+#             - if so select from the win the blank value and return it (first computer, then user)
+#             -
+#         2. check if middle square is taken - if not return it
+#         3. choose random
 #     c. assign to computer marker
 # 5.  d. display board
 # 6.  check if there is a win or the board is full
@@ -73,7 +79,13 @@ def request_user_choice!(squares)
 end
 
 def make_computer_choice!(squares, empty_squares)
-  computer_choice = empty_squares.sample
+  computer_choice = if chance_to_win?(squares)
+                      square_to_win(squares)
+                    elsif empty_squares.include?(:B2)
+                      :B2
+                    else
+                      empty_squares.sample
+                    end
   squares[computer_choice] = COMPUTER_MARKER
   prompt("The Computer chose #{computer_choice}.")
   display_board(squares)
@@ -81,7 +93,7 @@ end
 
 def update_open_moves!(squares, empty_squares)
   empty_squares.delete_if do |empty_sqr|
-    squares[empty_sqr] != " "
+    squares[empty_sqr] == USER_MARKER || squares[empty_sqr] == COMPUTER_MARKER
   end
 end
 
@@ -98,14 +110,43 @@ def winning_player(squares)
   nil
 end
 
-def reset_game(squares)
+def square_to_win(squares)
+  winning_square = nil
+
+  WIN_CONDITIONS.each do |winning_line|
+    current_moves = squares.values_at(*winning_line)
+    next if (current_moves.count(COMPUTER_MARKER) != 2) || (current_moves.count(" ") == 0)
+    winning_square = winning_line.select { |winning_square| squares[winning_square] == " " }
+    return winning_square.first
+  end
+
+  WIN_CONDITIONS.each do |winning_line|
+    current_moves = squares.values_at(*winning_line)
+    next if (current_moves.count(USER_MARKER) != 2) || (current_moves.count(" ") == 0)
+    winning_square = winning_line.select { |winning_square| squares[winning_square] == " " }
+    return winning_square.first
+  end
+
+  nil
+end
+
+def chance_to_win?(squares)
+  !!square_to_win(squares)
+end
+
+def reset_game(squares,empty_squares)
   squares.each_key do |square_name|
     squares[square_name] = " "
   end
+
+  empty_squares.clear.push(*squares.keys)
 end
 
 # Main program
 moves = { A1: " ", A2: " ", A3: " ", B1: " ", B2: " ", B3: " ", C1: " ", C2: " ", C3: " " }
+
+open_moves = moves.keys
+
 
 # Replay game loop
 loop do
@@ -117,8 +158,20 @@ loop do
 
   # Round Loop
   loop do
-    users_turn = [true, false].sample
-    open_moves = moves.keys
+    prompt("Who would you like to go first? ('Y' to go first, 'N' for the computer to go first, or 'R' for the computer to choose)")
+
+    users_turn_input = nil
+    loop do
+      users_turn_input = gets.chomp.downcase
+      break if %w(y n r).include?(users_turn_input)
+      prompt("Please enter 'Y' to go first, 'N' for the computer to go first, or 'R' for the computer to choose: ")
+    end
+
+    users_turn = case users_turn_input
+                 when 'y' then true
+                 when 'n' then false
+                 when 'r' then [true, false].sample
+                 end
 
     prompt("Round #{round}. The #{PLAYERS[users_turn]} will go first.")
     display_board(moves) if PLAYERS[users_turn] == "User"
@@ -156,9 +209,6 @@ loop do
       prompt("It's a tie! Player: #{player_win_count}. Computer: #{computer_win_count}.")
     end
 
-    reset_game(moves)
-    round += 1
-
     if player_win_count >= 5
       prompt("You won the game!")
       break
@@ -166,12 +216,16 @@ loop do
       prompt("Sorry, the computer won this game...")
       break
     end
+
+    reset_game(moves, open_moves)
+    round += 1
   end
 
   prompt("Would you like to play again? (y or n)")
   continue = gets.chomp.downcase
   break unless continue == "y"
 
+  reset_game(moves, open_moves)
 end
 
 prompt("Thanks for playing! Goodbye.")
