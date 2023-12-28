@@ -16,6 +16,7 @@
 ### Clarifying questions:
 * alternating deals on the first hand? (assume no for simplicities sake)
 * players hand before dealers hand? (assume yes)
+* first card is unknown? (assume yes)
 
 ### Examples
 * ex 1: Dealer will stay, then immediately win
@@ -36,13 +37,33 @@
 * 2 arrays for current hands of dealer and player
 
 ## Algorithm
-1. initialize deck
-2. deal players hand & deal dealers hand
-3. update deck
-4. ask player if they want to hit or stay
-5. check if player busts, or if they want to stay
-6. dealer hits or stays
-7. check if dealer busts or reaches stay number
-8. if neither has lost, calculate values
-9. display winner message
-10. ask if the player wants to repeat the game
+1.  initialize deck
+     a. create lookup of values based on card
+     b. create array containing all cards w/ suit
+     c. initialize the current deck for each hand
+2.  deal players hand & deal dealers hand
+     a. deal one card
+     b. update deck
+     c. repeat 3 times
+3.  calculate hand values
+4.   a. get strings version of hand
+     b. lookup the value for that string
+     c. check if multiple aces and reduce for each one
+4.  display current hands
+5.  ask player if they want to hit or stay
+     a. if hit, deal card
+     b. add it to current hand
+     c. update deck
+     d. calculate value
+     e. check if bust
+     f. repeat
+6.  check if player busts, or if they want to stay
+7.  dealer hits or stays
+     a. check if currently at 21 or player already lost
+     b. until at or greater than 17 draw card
+     c. update value
+     d. stop once over 17
+8.  check if dealer busts or reaches stay number
+9.  if neither has lost, calculate values
+10. display winner message
+11. ask if the player wants to repeat the game
